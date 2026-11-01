@@ -16,6 +16,8 @@ This document closes the open questions from the PRD and records the current non
 | **Q8 Legacy-import timing**                      | **Shipped in v1** as a UI section on `/settings`.                                                                                  | `src/routes/settings/+page.svelte` (legacy-import section) + `?/importLegacy` action in `src/routes/settings/+page.server.ts`, backed by `src/routes/api/import/legacy/+server.ts`.                                         |
 | **Q9 (sub-decision) Pre-generated `thumb.avif`** | **Skip pre-generation; rely on edge cache from first `cf.image` request**.                                                         | `src/routes/api/r2/[...key]/+server.ts` (on-the-fly transform with `cf.image`); no write-path AVIF generation in `src/lib/server/jobs/create.ts`.                                                                           |
 
+> **Q7 superseded (2026-11-01):** the tool is served only on `https://username-extractor.dropoutstudio.co`; the v1 `*.workers.dev` host is retired (`workers_dev: false`, `preview_urls: false`). The resolution above records the v1 decision and is kept as history.
+
 ## Non-functional posture
 
 | NFR                                                   | Status               | Notes                                                                                                                                                                                                                                                                                                  |
