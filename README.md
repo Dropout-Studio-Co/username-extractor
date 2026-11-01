@@ -68,7 +68,7 @@ Browser WebSocket ◄── live per-item updates; resyncs from D1 on reconnect
 ### Install
 
 ```bash
-git clone https://github.com/beyourahi/username-extractor.git
+git clone https://github.com/Dropout-Studio-Co/username-extractor.git
 cd username-extractor
 bun install
 ```
