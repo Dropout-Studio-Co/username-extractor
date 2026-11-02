@@ -67,34 +67,40 @@ jobs:
 
             - uses: ./.github/actions/setup
 
-            - name: Dependency audit (high and critical)
-              # Advisory debt is tracked separately: the pinned toolchain currently reports
-              # 29 advisories (1 critical, 28 high) across better-auth, undici, vite and zod.
-              # The step stays visible in the log but does not block until the lockfile bump lands.
-              continue-on-error: true
+            - name: Dependency audit (critical blocks, highs visible)
+              # Blocking gate: any critical advisory fails the job. Highs stay visible in the
+              # log and step summary but do not gate — the remaining ones are transitive with
+              # no in-range fix (sharp 0.34.5 via @sveltejs/enhanced-img and vite-plugin
+              # devDependency chains), so gating on them would only block unrelated work.
+              id: audit
               run: |
+                  set -euo pipefail
+                  bun audit --audit-level=critical
+
                   set +e
-                  set -o pipefail
-                  bun audit --audit-level=high 2>&1 | tee "$RUNNER_TEMP/audit.txt"
-                  status=$?
+                  bun audit --audit-level=high > "$RUNNER_TEMP/audit-high.txt" 2>&1
+                  high_status=$?
+                  set -e
                   {
                     echo "### Dependency audit"
-                    if [ "$status" -eq 0 ]; then
-                      echo "No high or critical advisories."
+                    echo ""
+                    echo "- critical: gate passed (0 critical advisories)"
+                    if [ "$high_status" -eq 0 ]; then
+                      echo "- high: none"
                     else
-                      echo "Non-blocking: advisories reported (see log)."
+                      echo "- high: present, non-blocking (no in-range fix) — see log"
+                      echo ""
                       echo '```'
-                      tail -n 3 "$RUNNER_TEMP/audit.txt"
+                      grep -E '^[[:space:]]*(high|moderate|critical):|[0-9]+ vulnerabilities' "$RUNNER_TEMP/audit-high.txt" | head -n 20
                       echo '```'
                     fi
                   } >> "$GITHUB_STEP_SUMMARY"
-                  exit 0
 
             - name: Restore lint caches
               uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
               with:
                   path: node_modules/.cache/lint
-                  key: lint-${{ runner.os }}-${{ hashFiles('bun.lock', '.prettierrc', '.prettierignore', 'eslint.config.js') }}-${{ github.sha }}
+                  key: lint-${{ runner.os }}-${{ hashFiles('bun.lock', '.prettierrc', '.prettierignore', 'eslint.config.js') }}
                   restore-keys: lint-${{ runner.os }}-${{ hashFiles('bun.lock', '.prettierrc', '.prettierignore', 'eslint.config.js') }}-
 
             - name: Lint
@@ -130,9 +136,18 @@ jobs:
             - name: Unit tests
               run: bun run test
 
+            - name: Design-system contract tests
+              run: bun run test:ds
+
             - name: Record results
               if: always()
-              run: echo "svelte-check + vitest completed (see logs)" >> "$GITHUB_STEP_SUMMARY"
+              run: |
+                  {
+                    echo "### types and tests"
+                    echo ""
+                    echo "- job status: ${{ job.status }}"
+                    echo "- svelte-check and vitest output is in the steps above"
+                  } >> "$GITHUB_STEP_SUMMARY"
 
     build:
         name: build
