@@ -2,7 +2,8 @@
  * Single-image VLM extraction pipeline. The queue consumer calls this once per `job_items` row.
  *
  *   imageBytes → runVisionViaRest (user's Cloudflare account) → extractResponseText
- *               → parseProfileResponse → per-platform cleaner → scoreProfileConfidence
+ *               → parseProfileResponse → extractHandleFromUrl (URL unwrap)
+ *               → per-platform cleaner → scoreProfileConfidence
  *               → tierOf + classifyStatus + buildProfileUrl
  *
  * Inference runs on the END USER's own Cloudflare account via the REST API
@@ -26,6 +27,7 @@ import { classifyStatus, tierOf, type Tier } from "$lib/extract/classify";
 import { hasUnusualPattern, isPlaceholderName } from "$lib/extract/validate";
 import { DETECT_PROFILE_PROMPT } from "$lib/extract/prompt";
 import { parseProfileResponse } from "$lib/extract/parse-response";
+import { extractHandleFromUrl } from "$lib/extract/profile-url";
 import {
     buildProfileUrl,
     cleanDisplayName,
@@ -123,9 +125,16 @@ export async function extractUsernameFromImage(input: ExtractInput): Promise<Ext
 
     const parsed = parseProfileResponse(rawText);
     const platform = getPlatform(parsed.platform);
-    const kind = parsed.kind;
 
-    const cleaned = kind === "display_name" ? cleanDisplayName(parsed.username) : platform.cleanHandle(parsed.username);
+    // Unwrap a profile URL BEFORE the benchmark-frozen cleaner sees it. The cleaner
+    // deletes URL syntax, so `https://instagram.com/rahi.khan` would otherwise become
+    // `httpsinstagram.comrahi.khan` (which still passes format validation → false HIGH lead).
+    // A URL always denotes a handle, regardless of how the model tagged `kind`.
+    const urlHandle = extractHandleFromUrl(parsed.username);
+    const kind: ExtractionKind = urlHandle ? "handle" : parsed.kind;
+    const value = urlHandle ?? parsed.username;
+
+    const cleaned = kind === "display_name" ? cleanDisplayName(value) : platform.cleanHandle(value);
 
     // Drop generic placeholder identifiers the model echoes when it can't read a handle
     // ("Some Display Name", "My Channel", "Example Name") — never let them become leads (M-020).

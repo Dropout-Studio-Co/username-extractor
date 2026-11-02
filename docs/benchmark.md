@@ -101,6 +101,24 @@ Kimi K2.6 must land within −2 pts of that figure (≥ 83%) to ship per the
 PRD. Lower → reopen Open Question Q6 and either tune the prompt
 (`src/lib/extract/prompt.ts`) or revisit model selection.
 
+## URL inputs are unwrapped before cleaning
+
+The per-platform cleaners (`cleanUsername`, and the TikTok/YouTube/
+Facebook cleaners in `src/lib/social/platform.ts`) are verbatim ports of
+the benchmarked Python rules and are **not** modified. Their recorded
+outputs above stay valid for handle-shaped text.
+
+A model or OCR pass can emit a full profile URL instead of a handle, and
+the cleaners delete URL syntax (`https://instagram.com/rahi.khan` →
+`httpsinstagram.comrahi.khan`, which still passes Instagram format
+validation and would score HIGH). So `src/lib/extract/profile-url.ts`
+(`extractHandleFromUrl`) runs **before** the cleaner at every call site:
+it recognises a supported profile URL, decodes and returns its path
+segment, and returns `null` for everything else so non-URL input follows
+the original path byte-for-byte. The benchmark script mirrors that order,
+so a fixture whose model output is a URL is now scored on the handle
+rather than on mangled text.
+
 ## How to extend the fixture set
 
 The current 58 pairs come from the legacy `extract_usernames` Python

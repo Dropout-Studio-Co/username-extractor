@@ -32,6 +32,7 @@ import { fileURLToPath } from "node:url";
 
 import { DETECT_PROFILE_PROMPT } from "../src/lib/extract/prompt.ts";
 import { parseProfileResponse } from "../src/lib/extract/parse-response.ts";
+import { extractHandleFromUrl } from "../src/lib/extract/profile-url.ts";
 import { getPlatform, cleanDisplayName } from "../src/lib/social/platform.ts";
 import { runVisionViaRest, DEFAULT_VISION_MODEL, type CloudflareCreds } from "../src/lib/server/ai/run-rest.ts";
 import { extractResponseText } from "../src/lib/server/ai/gateway.ts";
@@ -119,14 +120,18 @@ async function runBenchmark(creds: CloudflareCreds): Promise<Row[]> {
         }
         const { raw, error } = await callModel(creds, imagePath);
         const parsed = raw ? parseProfileResponse(raw) : null;
-        // Mirror the production cleaner dispatch exactly (extract.ts): per-platform handle
-        // cleaner, or the display-name cleaner when kind="display_name". Using the IG-only
-        // cleanUsername here would mis-score YouTube hyphens / Facebook underscores / display names.
-        const cleaned = parsed
-            ? parsed.kind === "display_name"
-                ? cleanDisplayName(parsed.username)
-                : getPlatform(parsed.platform).cleanHandle(parsed.username)
-            : null;
+        // Mirror the production cleaner dispatch exactly (extract.ts): unwrap a profile
+        // URL first, then the per-platform handle cleaner — or the display-name cleaner
+        // when kind="display_name". Using the IG-only cleanUsername here would mis-score
+        // YouTube hyphens / Facebook underscores / display names.
+        let cleaned: string | null = null;
+        if (parsed) {
+            const urlHandle = extractHandleFromUrl(parsed.username);
+            const kind = urlHandle ? "handle" : parsed.kind;
+            const value = urlHandle ?? parsed.username;
+            cleaned =
+                kind === "display_name" ? cleanDisplayName(value) : getPlatform(parsed.platform).cleanHandle(value);
+        }
         rows.push({
             id: pair.id,
             expected: pair.expected,
