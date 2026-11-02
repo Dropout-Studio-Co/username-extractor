@@ -12,6 +12,11 @@
  *   4. Strip trailing `.`.
  *   5. Reject if length ∉ [1, 30], first char isn't alphanumeric, or no
  *      alphanumeric exists anywhere.
+ *
+ * URL inputs are NOT handled here: this function deletes URL syntax on purpose
+ * (it keeps only handle characters). Recognising a profile URL is a separate,
+ * earlier step — `extractHandleFromUrl` in `./profile-url.ts` — so this frozen
+ * rule set and its benchmarked outputs stay intact for every other input.
  */
 
 const ALNUM_RE = /[a-z0-9]/;

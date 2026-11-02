@@ -65,10 +65,13 @@ describe("platform cleaners — shared normalization contract", () => {
     });
 });
 
-// TODO(normalization gap): a model that returns a full profile URL is not unwrapped.
-// `cleanUsername("https://instagram.com/rahi.khan")` returns "httpsinstagramcomrahi.khan"
-// and still passes `isValidInstagramFormat`, so it would be stored as a HIGH-tier lead.
-// Platform cleaners behave the same way ("tiktok.com/@mrbeast" → "tiktok.commrbeast").
-// Fixing this changes the benchmark-frozen `cleanUsername` contract (see docs/benchmark.md),
-// so it needs a product decision + a re-run of the accuracy benchmark first.
-describe.todo("handle normalization from profile URLs");
+// URL inputs are unwrapped BEFORE the frozen cleaner (`extractHandleFromUrl`, see
+// profile-url.test.ts), so `cleanUsername` keeps its benchmarked rule set verbatim
+// while the pipeline still stores the real handle. This pins the split: if anyone
+// "fixes" the mangling inside `cleanUsername`, the benchmark contract breaks here.
+describe("cleanUsername — frozen contract for URL-shaped input", () => {
+    it("still deletes URL syntax (the unwrap step runs upstream, not here)", () => {
+        expect(cleanUsername("https://instagram.com/rahi.khan")).toBe("httpsinstagram.comrahi.khan");
+        expect(getPlatform("tiktok").cleanHandle("tiktok.com/@mrbeast")).toBe("tiktok.commrbeast");
+    });
+});
