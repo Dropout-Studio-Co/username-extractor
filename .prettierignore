@@ -9,3 +9,6 @@ src/lib/ds
 # Generated Drizzle migrations — tool-generated snapshots/SQL; prettier reformatting
 # them fights drizzle's output and dirties the tree on every format run.
 migrations/
+
+# Vendored Dropout Design System metadata — generated verbatim by dropout-ds-sync.
+vendor/dropout-design-system/
