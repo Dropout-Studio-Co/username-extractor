@@ -94,9 +94,9 @@
                     >
                         <div class="min-w-0">
                             <div class="flex items-center gap-2">
-                                <span class="text-foreground text-sm font-semibold whitespace-nowrap"
-                                    >{job.id.slice(0, 18)}</span
-                                >
+                                <span class="text-foreground text-sm font-semibold whitespace-nowrap">
+                                    {job.id.slice(0, 18)}
+                                </span>
                                 {#if job.status === "completed"}
                                     <span
                                         class="border-status-active-border bg-status-active-bg text-status-active-fg text-micro inline-flex shrink-0 items-center gap-1 rounded-full border px-1.5 py-px uppercase"

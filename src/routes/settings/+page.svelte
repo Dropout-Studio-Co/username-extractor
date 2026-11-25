@@ -689,8 +689,10 @@
                         size="sm"
                         variant="primary"
                         arrow={false}
-                        class="w-full justify-center whitespace-nowrap sm:w-auto">Remove duplicates</Cta
+                        class="w-full justify-center whitespace-nowrap sm:w-auto"
                     >
+                        Remove duplicates
+                    </Cta>
                 </SettingsActions>
             </form>
         </div>

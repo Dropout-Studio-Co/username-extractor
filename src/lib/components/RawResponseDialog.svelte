@@ -59,9 +59,9 @@
         >
             <div class="border-hair flex items-start justify-between gap-3 border-b p-5">
                 <div class="min-w-0">
-                    <Dialog.Title class="text-sm font-semibold tracking-tight text-balance"
-                        >Raw model response</Dialog.Title
-                    >
+                    <Dialog.Title class="text-sm font-semibold tracking-tight text-balance">
+                        Raw model response
+                    </Dialog.Title>
                     <p class="text-ink-muted mt-1 truncate text-xs">{stem}</p>
                 </div>
                 <div class="flex items-center gap-1.5">
